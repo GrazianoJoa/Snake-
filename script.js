@@ -1,7 +1,17 @@
+/*
+	TODO
+	- Score system
+	- Smoother gameplay
+	- Random Apple generation
+	- MORE STUFF!
+*/
+
 class Game {
 	constructor(board, snake) {
 		this.board = board
 		this.snake = snake
+		this.fruit = new Fruit()
+		this.collisionManager = new CollisionManager()
 	}
 
 	handleKeyDown(event) {
@@ -20,15 +30,27 @@ class Game {
 		}
 	}
 
+	render() {
+		this.board.drawFruit(this.fruit)
+		this.board.drawSnake(this.snake)
+	}
+
 	init() {
 		document.addEventListener('keydown', this.handleKeyDown.bind(this));
-		setInterval(() => {this.gameLoop()}, 200);
+		setInterval(() => {this.gameLoop()}, 150);
 	}
 
 	gameLoop() {
 		this.board.clearCanvas()
 		this.snake.move()
-		this.board.drawSnake(this.snake)
+		if (this.collisionManager.checkWallCollision(this.snake, this.board) || this.collisionManager.checkSelfCollision(this.snake)) {
+			alert("Game Over!")
+			this.snake = new Snake
+		}
+		if (this.collisionManager.checkFruitCollision(this.snake, this.fruit)) {
+			this.snake.grow()
+		}
+		this.render()
 	}
 }
 
@@ -39,8 +61,7 @@ class CanvasManager {
 	}
 
 	clearCanvas() {
-		console.log(this.canvas.width)
-		this.context.clearRect(0, 0, 400, 400)
+		this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
 	}
 
 	drawRect(x, y, width, heigth, color) {
@@ -60,7 +81,32 @@ class CanvasManager {
 }
 
 class CollisionManager {
+	checkWallCollision(snake, board) {
+		const head = snake.body[0]
+		if (head.x < 0 || head.x >= board.canvas.width || head.y < 0 || head.y >= board.canvas.height)
+			{
+				return true
+			}
+		return false
+	}
 
+	checkFruitCollision(snake, fruit) {
+		const head = snake.body[0]
+		if (head.x === fruit.x && head.y === fruit.y) {
+			return true
+		}
+		return false
+	}
+
+	checkSelfCollision(snake) {
+		const head = snake.body[0]
+		for (let i = 1; i < snake.body.length; i++) {
+			if (head.x === snake.body[i].x && head.y === snake.body[i].y) {
+				return true
+			}
+		}
+		return false
+	}
 }
 
 class Snake {
@@ -70,7 +116,7 @@ class Snake {
 	}
 
 	changeDirection(newDirection) {
-		if (this.isValidDirection(newDirection)) {
+		if (this.body.length === 1 || this.isValidDirection(newDirection)) {
 			this.direction = newDirection;
 		}
 	}
@@ -106,6 +152,33 @@ class Snake {
 
 		this.body.unshift(newHead)
 		this.body.pop()
+	}
+
+	grow() {
+		let {x, y} = this.body[0]
+		switch (this.direction) {
+			case 'up':
+				y = 40
+				break;
+			case 'down':
+				y = -40
+				break;
+			case 'right':
+				x = -40
+				break;
+			case 'left':
+				x = 40
+				break;
+		}
+		const tail = {x: x, y: y}
+		this.body.push(tail);
+	}
+}
+
+class Fruit {
+	constructor() {
+		this.x = 80
+		this.y = 80
 	}
 }
 
